@@ -3,6 +3,7 @@
 <div class="dashboard-container">
     <h1>Welcome, Admin!</h1>
     <p>This is your dashboard.</p>
+    <p><a class="btn" href="{{ url_for('admin_recipes') }}">Manage Recipes</a></p>
     <a class="btn" href="{{ url_for('admin_logout') }}">Log Out</a>
 </div>
 {% endblock %}

@@ -18,4 +18,7 @@ from .models import AdminUser, Recipe
 def load_user(user_id):
     return AdminUser() if user_id == 'admin' else None
 
+with app.app_context():
+    db.create_all()
+
 from . import routes

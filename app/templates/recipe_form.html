@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="form-container">
+    <h1>{{ action }} Recipe</h1>
+    <form method="post">
+        <p>
+            <label for="title">Title</label><br>
+            <input id="title" name="title" type="text" required value="{{ recipe.title if recipe else '' }}">
+        </p>
+        <p>
+            <label for="description">Description</label><br>
+            <textarea id="description" name="description" required>{{ recipe.description if recipe else '' }}</textarea>
+        </p>
+        <button type="submit" class="btn">Save</button>
+    </form>
+    <a href="{{ url_for('admin_recipes') }}">Back</a>
+</div>
+{% endblock %}
