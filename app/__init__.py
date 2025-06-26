@@ -1,15 +1,18 @@
 from flask import Flask
 from flask_login import LoginManager
+from flask_sqlalchemy import SQLAlchemy
 from .config import Config
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
+db = SQLAlchemy(app)
+
 login_manager = LoginManager(app)
 login_manager.login_view = 'admin_login'
 login_manager.login_message = 'Please log in as admin.'
 
-from .models import AdminUser
+from .models import AdminUser, Recipe
 
 @login_manager.user_loader
 def load_user(user_id):

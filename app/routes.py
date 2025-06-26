@@ -2,31 +2,27 @@ from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_user, login_required, logout_user
 from werkzeug.security import check_password_hash
 
-from app import app
+from app import app, db
 from app.forms import AdminLoginForm
-from app.models import AdminUser
+from app.models import AdminUser, Recipe
 from app.config import Config
 
+@app.before_request
+def seed_data():
+    if not Recipe.query.first():
+        sample = [
+            Recipe(title='Scrambled Eggs', shortname='scrambled-eggs', description='Tasty eggs made from eggs.'),
+            Recipe(title='Pasta',          shortname='pasta',          description='A delicious pasta dish with a rich sauce.'),
+            Recipe(title='Chocolate Cake',  shortname='chocolate-cake', description='A moist chocolate cake with creamy frosting.')
+        ]
+        db.session.bulk_save_objects(sample)
+        db.session.commit()
 
 @app.route('/')
 @app.route('/index')
 def index():
-    recipes = [
-        {
-            "title" : "scrambled eggs",
-            "description" : "tasty eggs made from eggs"
-        },
-        {
-            "title" : "pasta",
-            "description" : "a delicious pasta dish with a rich sauce"
-        },
-        {
-            "title" : "chocolate cake",
-            "description" : "a moist chocolate cake with creamy frosting"
-        }
-    ]
+    recipes = Recipe.query.all()
     return render_template('index.html', recipes=recipes)
-
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     form = AdminLoginForm()
@@ -43,7 +39,6 @@ def admin_login():
 def admin_dashboard():
     return render_template('admin_dashboard.html')
 
-# Admin logout
 @app.route('/admin/logout')
 def admin_logout():
     logout_user()
