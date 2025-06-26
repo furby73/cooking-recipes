@@ -87,3 +87,8 @@ def admin_logout():
     logout_user()
     flash('Logged out.', 'info')
     return redirect(url_for('admin_login'))
+
+@app.route('/recipe/<string:shortname>')
+def recipe_detail(shortname):
+    recipe = Recipe.query.filter_by(shortname=shortname).first_or_404()
+    return render_template('recipe_detail.html', recipe=recipe)

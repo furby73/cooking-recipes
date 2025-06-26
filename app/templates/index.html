@@ -3,10 +3,12 @@
 <div class="recipes-container">
     <h1>Recipes</h1>
     {% for recipe in recipes %}
-    <div class="recipe-card">
-        <h2>{{ recipe.title }}</h2>
-        <p>{{ recipe.description }}</p>
-    </div>
+    <a href="{{ url_for('recipe_detail', shortname=recipe.shortname) }}">
+        <div class="recipe-card">
+            <h2>{{ recipe.title }}</h2>
+            <p>{{ recipe.description }}</p>
+        </div>
+    </a>
     {% endfor %}
 </div>
 {% endblock %}
