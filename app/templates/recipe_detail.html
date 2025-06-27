@@ -3,6 +3,14 @@
 <div class="recipes-container">
     <h1>{{ recipe.title }}</h1>
     <p>{{ recipe.description }}</p>
+
+    <h2>Instructions</h2>
+    <ol class="steps-list">
+        {% for step in recipe.steps.order_by('step_number') %}
+        <li>{{ step.instruction }}</li>
+        {% endfor %}
+    </ol>
+
     <a href="{{ url_for('index') }}">Back to Recipes</a>
 </div>
 {% endblock %}

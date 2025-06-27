@@ -53,3 +53,37 @@ a {
 a:hover {
     text-decoration: none;
 }
+
+.steps-container {
+    margin: 1rem 0;
+}
+
+.step {
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.step textarea {
+    flex-grow: 1;
+    min-height: 60px;
+    padding: 0.5rem;
+}
+
+.remove-step {
+    margin-left: 0.5rem;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+}
+
+.steps-list {
+    padding-left: 1.5rem;
+}
+
+.steps-list li {
+    margin-bottom: 0.5rem;
+}

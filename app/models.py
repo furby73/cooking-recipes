@@ -17,6 +17,11 @@ class Recipe(db.Model):
     title = db.Column(db.String(120), nullable=False)
     shortname = db.Column(db.String(60), unique=True, nullable=False)
     description = db.Column(db.Text, nullable=False)
+    steps = db.relationship('RecipeStep', backref='recipe', lazy='dynamic', 
+                           cascade='all, delete-orphan', order_by='RecipeStep.step_number')
 
-    def __repr__(self):
-        return f'<Recipe {self.shortname}>'
+class RecipeStep(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    step_number = db.Column(db.Integer, nullable=False)
+    instruction = db.Column(db.Text, nullable=False)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)

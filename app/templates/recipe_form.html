@@ -2,7 +2,7 @@
 {% block content %}
 <div class="form-container">
     <h1>{{ action }} Recipe</h1>
-    <form method="post">
+    <form method="post" id="recipe-form">
         <p>
             <label for="title">Title</label><br>
             <input id="title" name="title" type="text" required value="{{ recipe.title if recipe else '' }}">
@@ -11,8 +11,59 @@
             <label for="description">Description</label><br>
             <textarea id="description" name="description" required>{{ recipe.description if recipe else '' }}</textarea>
         </p>
+
+        <div id="steps-container">
+            <label>Instructions:</label>
+            {% if recipe %}
+            {% for step in recipe.steps.order_by('step_number') %}
+            <div class="step" data-step="{{ step.step_number }}">
+                <textarea name="step-{{ step.step_number }}" required>{{ step.instruction }}</textarea>
+                <button type="button" class="remove-step">Remove</button>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+        <button type="button" id="add-step" class="btn">+ Add Step</button>
+
         <button type="submit" class="btn">Save</button>
     </form>
     <a href="{{ url_for('admin_recipes') }}">Back</a>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const container = document.getElementById('steps-container');
+        const addButton = document.getElementById('add-step');
+        let stepCount = container.querySelectorAll('.step').length || 0;
+
+        addButton.addEventListener('click', function () {
+            stepCount++;
+            const stepDiv = document.createElement('div');
+            stepDiv.className = 'step';
+            stepDiv.dataset.step = stepCount;
+            stepDiv.innerHTML = `
+            <textarea name="step-${stepCount}" placeholder="Step ${stepCount}" required></textarea>
+            <button type="button" class="remove-step">Remove</button>
+        `;
+            container.appendChild(stepDiv);
+        });
+
+        container.addEventListener('click', function (e) {
+            if (e.target.classList.contains('remove-step')) {
+                const stepDiv = e.target.closest('.step');
+                stepDiv.remove();
+                // Renumber remaining steps
+                const steps = container.querySelectorAll('.step');
+                steps.forEach((step, index) => {
+                    const textarea = step.querySelector('textarea');
+                    const newNum = index + 1;
+                    step.dataset.step = newNum;
+                    textarea.name = `step-${newNum}`;
+                    textarea.placeholder = `Step ${newNum}`;
+                });
+                stepCount = steps.length;
+            }
+        });
+    });
+</script>
 {% endblock %}
