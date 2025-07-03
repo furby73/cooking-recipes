@@ -1,13 +1,23 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="recipes-container">
+    {% if recipe.cover_image %}
+    <img src="{{ recipe.cover_image }}" alt="{{ recipe.title }}" class="recipe-cover-large">
+    {% endif %}
     <h1>{{ recipe.title }}</h1>
     <p>{{ recipe.description }}</p>
 
     <h2>Instructions</h2>
     <ol class="steps-list">
         {% for step in recipe.steps.order_by('step_number') %}
-        <li>{{ step.instruction }}</li>
+        <li>
+            <div class="step-content">
+                <p>{{ step.instruction }}</p>
+                {% if step.image %}
+                <img src="{{ step.image }}" alt="Step {{ loop.index }}" class="step-image">
+                {% endif %}
+            </div>
+        </li>
         {% endfor %}
     </ol>
 

@@ -2,7 +2,20 @@
 {% block content %}
 <div class="form-container">
     <h1>{{ action }} Recipe</h1>
-    <form method="post" id="recipe-form">
+    <form method="post" enctype="multipart/form-data" id="recipe-form">
+        <div class="form-group">
+            <label for="cover_image">Cover Image</label>
+            {% if recipe and recipe.cover_image %}
+            <div>
+                <img src="{{ recipe.cover_image }}" alt="Current cover" style="max-height: 150px; margin: 10px 0;">
+                <label>
+                    <input type="checkbox" name="remove_cover_image"> Remove current image
+                </label>
+            </div>
+            {% endif %}
+            <input type="file" id="cover_image" name="cover_image" accept="image/*">
+        </div>
+
         <p>
             <label for="title">Title</label><br>
             <input id="title" name="title" type="text" required value="{{ recipe.title if recipe else '' }}">
@@ -17,8 +30,22 @@
             {% if recipe %}
             {% for step in recipe.steps.order_by('step_number') %}
             <div class="step" data-step="{{ step.step_number }}">
+                <label>Step {{ step.step_number }}</label>
                 <textarea name="step-{{ step.step_number }}" required>{{ step.instruction }}</textarea>
-                <button type="button" class="remove-step">Remove</button>
+
+                {% if step.image %}
+                <div>
+                    <img src="{{ step.image }}" alt="Step image" style="max-height: 100px; margin: 5px 0;">
+                    <label>
+                        <input type="checkbox" name="remove_step_image-{{ step.step_number }}"> Remove image
+                    </label>
+                </div>
+                {% endif %}
+
+                <label>Step Image (optional)</label>
+                <input type="file" name="step-image-{{ step.step_number }}" accept="image/*">
+
+                <button type="button" class="remove-step">Remove Step</button>
             </div>
             {% endfor %}
             {% endif %}
@@ -36,30 +63,36 @@
         const addButton = document.getElementById('add-step');
         let stepCount = container.querySelectorAll('.step').length || 0;
 
-        addButton.addEventListener('click', function () {
-            stepCount++;
+        function addStep(stepNumber) {
             const stepDiv = document.createElement('div');
             stepDiv.className = 'step';
-            stepDiv.dataset.step = stepCount;
+            stepDiv.dataset.step = stepNumber;
             stepDiv.innerHTML = `
-            <textarea name="step-${stepCount}" placeholder="Step ${stepCount}" required></textarea>
-            <button type="button" class="remove-step">Remove</button>
+            <label>Step ${stepNumber}</label>
+            <textarea name="step-${stepNumber}" placeholder="Instruction" required></textarea>
+            <label>Step Image (optional)</label>
+            <input type="file" name="step-image-${stepNumber}" accept="image/*">
+            <button type="button" class="remove-step">Remove Step</button>
         `;
             container.appendChild(stepDiv);
+        }
+
+        addButton.addEventListener('click', function () {
+            stepCount++;
+            addStep(stepCount);
         });
 
         container.addEventListener('click', function (e) {
             if (e.target.classList.contains('remove-step')) {
                 const stepDiv = e.target.closest('.step');
                 stepDiv.remove();
-                // Renumber remaining steps
                 const steps = container.querySelectorAll('.step');
                 steps.forEach((step, index) => {
-                    const textarea = step.querySelector('textarea');
                     const newNum = index + 1;
                     step.dataset.step = newNum;
-                    textarea.name = `step-${newNum}`;
-                    textarea.placeholder = `Step ${newNum}`;
+                    step.querySelector('label').textContent = `Step ${newNum}`;
+                    step.querySelector('textarea').name = `step-${newNum}`;
+                    step.querySelector('input[type="file"]').name = `step-image-${newNum}`;
                 });
                 stepCount = steps.length;
             }
