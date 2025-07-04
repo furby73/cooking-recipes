@@ -1,13 +1,9 @@
 # Cooking Recipes App
 
 ## Installation & Setup
-1. Install dependencies:
+   Start the application:
    ```bash
-   pip install -r requirements.txt
-   ```
-2. Start the application:
-   ```bash
-   flask run
+   docker-compose up --build
    ```
 
 ## Admin Panel Access
