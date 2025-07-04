@@ -18,3 +18,4 @@ class Config:
     S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', 'recipes')
     S3_REGION = os.environ.get('S3_REGION', 'us-east-1')
     S3_SECURE = os.environ.get('S3_SECURE', 'False').lower() == 'true'
+    S3_PUBLIC_URL = os.environ.get('S3_PUBLIC_URL', 'http://localhost:9000') 

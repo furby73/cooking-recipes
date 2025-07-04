@@ -4,6 +4,6 @@ Flask-SQLAlchemy==3.1.1
 Flask-WTF==1.2.2
 python-dotenv==1.1.0
 python-slugify==8.0.4
-SQLAlchemy==2.0.41
 Werkzeug==3.1.3
-WTForms==3.2.1
+boto3==1.34.112
+Flask-Migrate==4.0.5
