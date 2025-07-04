@@ -1,38 +1,41 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="recipe-detail">
-    <h1>{{ recipe.title }}</h1>
+<div class="recipe-detail-layout" itemscope itemtype="http://schema.org/Recipe">
 
-    {% if recipe.cover_image %}
-    <img src="{{ recipe.cover_image }}" alt="{{ recipe.title }}" class="cover-image">
-    {% endif %}
+    <aside class="ingredients-section">
+        <h3>Ingredients</h3>
+        <ul>
+            {% for ingredient in recipe.ingredients %}
+            <li itemprop="recipeIngredient">{{ ingredient.name }} - {{ ingredient.weight }}</li>
+            {% endfor %}
+        </ul>
+    </aside>
 
-    <p class="description">{{ recipe.description }}</p>
+    <article class="recipe-main-content">
+        <header class="recipe-header">
+            <h1 itemprop="name">{{ recipe.title }}</h1>
+            {% if recipe.cover_image %}
+            <img src="{{ recipe.cover_image }}" alt="{{ recipe.title }}" itemprop="image" class="cover-image">
+            {% endif %}
+            <p itemprop="description" class="description">{{ recipe.description }}</p>
+        </header>
 
-    <div class="recipe-body">
-        <div class="ingredients-section">
-            <h2>Ingredients</h2>
-            <ul>
-                {% for ingredient in recipe.ingredients %}
-                <li>{{ ingredient.name }} - {{ ingredient.weight }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-
-        <div class="steps-section">
-            <h2>Steps</h2>
+        <section class="steps-section" itemprop="recipeInstructions">
+            <h2>Instructions</h2>
             <ol>
                 {% for step in recipe.steps %}
                 <li>
                     <p>{{ step.instruction }}</p>
                     {% if step.image %}
-                    <img src="{{ step.image }}" alt="Step {{ step.step_number }}" class="step-image">
+                    <img src="{{ step.image }}" alt="Step {{ loop.index }}" class="step-image">
                     {% endif %}
                 </li>
                 {% endfor %}
             </ol>
-        </div>
-    </div>
+        </section>
+
+    </article>
+
 </div>
 {% endblock %}
