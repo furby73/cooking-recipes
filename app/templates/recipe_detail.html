@@ -1,26 +1,38 @@
 {% extends "base.html" %}
+
 {% block content %}
-<div class="recipes-container">
-    {% if recipe.cover_image %}
-    <img src="{{ recipe.cover_image }}" alt="{{ recipe.title }}" class="recipe-cover-large">
-    {% endif %}
+<div class="recipe-detail">
     <h1>{{ recipe.title }}</h1>
-    <p>{{ recipe.description }}</p>
 
-    <h2>Instructions</h2>
-    <ol class="steps-list">
-        {% for step in recipe.steps.order_by('step_number') %}
-        <li>
-            <div class="step-content">
-                <p>{{ step.instruction }}</p>
-                {% if step.image %}
-                <img src="{{ step.image }}" alt="Step {{ loop.index }}" class="step-image">
-                {% endif %}
-            </div>
-        </li>
-        {% endfor %}
-    </ol>
+    {% if recipe.cover_image %}
+    <img src="{{ recipe.cover_image }}" alt="{{ recipe.title }}" class="cover-image">
+    {% endif %}
 
-    <a href="{{ url_for('index') }}">Back to Recipes</a>
+    <p class="description">{{ recipe.description }}</p>
+
+    <div class="recipe-body">
+        <div class="ingredients-section">
+            <h2>Ingredients</h2>
+            <ul>
+                {% for ingredient in recipe.ingredients %}
+                <li>{{ ingredient.name }} - {{ ingredient.weight }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="steps-section">
+            <h2>Steps</h2>
+            <ol>
+                {% for step in recipe.steps %}
+                <li>
+                    <p>{{ step.instruction }}</p>
+                    {% if step.image %}
+                    <img src="{{ step.image }}" alt="Step {{ step.step_number }}" class="step-image">
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ol>
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -1,13 +1,24 @@
 {% extends "base.html" %}
+
 {% block content %}
 <div class="form-container">
-    <h1>{{ action }} Recipe</h1>
-    <form method="post" enctype="multipart/form-data" id="recipe-form">
+    <h2>{{ action }} Recipe</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" id="title" name="title" value="{{ recipe.title if recipe else '' }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" required>{{ recipe.description if recipe else '' }}</textarea>
+        </div>
+
         <div class="form-group">
             <label for="cover_image">Cover Image</label>
             {% if recipe and recipe.cover_image %}
-            <div>
-                <img src="{{ recipe.cover_image }}" alt="Current cover" style="max-height: 150px; margin: 10px 0;">
+            <div class="current-image">
+                <img src="{{ recipe.cover_image }}" alt="Cover Image" width="200">
                 <label>
                     <input type="checkbox" name="remove_cover_image"> Remove current image
                 </label>
@@ -16,87 +27,140 @@
             <input type="file" id="cover_image" name="cover_image" accept="image/*">
         </div>
 
-        <p>
-            <label for="title">Title</label><br>
-            <input id="title" name="title" type="text" required value="{{ recipe.title if recipe else '' }}">
-        </p>
-        <p>
-            <label for="description">Description</label><br>
-            <textarea id="description" name="description" required>{{ recipe.description if recipe else '' }}</textarea>
-        </p>
-
-        <div id="steps-container">
-            <label>Instructions:</label>
-            {% if recipe %}
-            {% for step in recipe.steps.order_by('step_number') %}
-            <div class="step" data-step="{{ step.step_number }}">
-                <label>Step {{ step.step_number }}</label>
-                <textarea name="step-{{ step.step_number }}" required>{{ step.instruction }}</textarea>
-
-                {% if step.image %}
-                <div>
-                    <img src="{{ step.image }}" alt="Step image" style="max-height: 100px; margin: 5px 0;">
-                    <label>
-                        <input type="checkbox" name="remove_step_image-{{ step.step_number }}"> Remove image
-                    </label>
+        <div class="form-group">
+            <label>Ingredients</label>
+            <div id="ingredients-container">
+                {% set ingredients = recipe.ingredients.all() if recipe else [] %}
+                {% if ingredients %}
+                {% for ingredient in ingredients %}
+                <div class="ingredient-item">
+                    <input type="text" name="ingredient-name-{{ loop.index }}" placeholder="Ingredient Name"
+                        value="{{ ingredient.name }}" required>
+                    <input type="text" name="ingredient-weight-{{ loop.index }}" placeholder="Weight/Amount"
+                        value="{{ ingredient.weight }}" required>
+                    <button type="button" class="btn-remove" onclick="removeItem(this)">Remove</button>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="ingredient-item">
+                    <input type="text" name="ingredient-name-1" placeholder="Ingredient Name">
+                    <input type="text" name="ingredient-weight-1" placeholder="Weight/Amount">
+                    <button type="button" class="btn-remove" onclick="removeItem(this)">Remove</button>
                 </div>
                 {% endif %}
-
-                <label>Step Image (optional)</label>
-                <input type="file" name="step-image-{{ step.step_number }}" accept="image/*">
-
-                <button type="button" class="remove-step">Remove Step</button>
             </div>
-            {% endfor %}
-            {% endif %}
+            <button type="button" id="add-ingredient-btn" class="btn">Add Ingredient</button>
         </div>
-        <button type="button" id="add-step" class="btn">+ Add Step</button>
 
-        <button type="submit" class="btn">Save</button>
+        <div class="form-group">
+            <label>Steps</label>
+            <div id="steps-container">
+                {% set steps = recipe.steps.all() if recipe else [] %}
+                {% if steps %}
+                {% for step in steps %}
+                <div class="step-item">
+                    <textarea name="step-{{ loop.index }}" placeholder="Step instruction"
+                        required>{{ step.instruction }}</textarea>
+                    <div class="step-image-control">
+                        {% if step.image %}
+                        <div class="current-image">
+                            <img src="{{ step.image }}" alt="Step Image" width="100">
+                            <label>
+                                <input type="checkbox" name="remove_step_image-{{ loop.index }}"> Remove
+                            </label>
+                        </div>
+                        {% endif %}
+                        <input type="file" name="step-image-{{ loop.index }}" accept="image/*">
+                    </div>
+                    <button type="button" class="btn-remove" onclick="removeItem(this)">Remove</button>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="step-item">
+                    <textarea name="step-1" placeholder="Step instruction"></textarea>
+                    <div class="step-image-control">
+                        <input type="file" name="step-image-1" accept="image/*">
+                    </div>
+                    <button type="button" class="btn-remove" onclick="removeItem(this)">Remove</button>
+                </div>
+                {% endif %}
+            </div>
+            <button type="button" id="add-step-btn" class="btn">Add Step</button>
+        </div>
+
+        <input type="submit" value="{{ action }} Recipe" class="btn btn-primary">
+        <a href="{{ url_for('admin_recipes') }}" class="btn">Cancel</a>
     </form>
-    <a href="{{ url_for('admin_recipes') }}">Back</a>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const container = document.getElementById('steps-container');
-        const addButton = document.getElementById('add-step');
-        let stepCount = container.querySelectorAll('.step').length || 0;
-
-        function addStep(stepNumber) {
-            const stepDiv = document.createElement('div');
-            stepDiv.className = 'step';
-            stepDiv.dataset.step = stepNumber;
-            stepDiv.innerHTML = `
-            <label>Step ${stepNumber}</label>
-            <textarea name="step-${stepNumber}" placeholder="Instruction" required></textarea>
-            <label>Step Image (optional)</label>
-            <input type="file" name="step-image-${stepNumber}" accept="image/*">
-            <button type="button" class="remove-step">Remove Step</button>
-        `;
-            container.appendChild(stepDiv);
+        function updateItemNames(container, itemClass, fields) {
+            const items = container.querySelectorAll(`.${itemClass}`);
+            items.forEach((item, index) => {
+                const newIndex = index + 1;
+                fields.forEach(field => {
+                    const element = item.querySelector(field.selector);
+                    if (element) {
+                        element.name = `${field.baseName}-${newIndex}`;
+                    }
+                });
+            });
+            return items.length;
         }
 
-        addButton.addEventListener('click', function () {
-            stepCount++;
-            addStep(stepCount);
+        const ingredientsContainer = document.getElementById('ingredients-container');
+        const addIngredientBtn = document.getElementById('add-ingredient-btn');
+        let ingredientCounter = ingredientsContainer.querySelectorAll('.ingredient-item').length;
+
+        addIngredientBtn.addEventListener('click', () => {
+            ingredientCounter++;
+            const newItem = document.createElement('div');
+            newItem.classList.add('ingredient-item');
+            newItem.innerHTML = `
+            <input type="text" name="ingredient-name-${ingredientCounter}" placeholder="Ingredient Name">
+            <input type="text" name="ingredient-weight-${ingredientCounter}" placeholder="Weight/Amount">
+            <button type="button" class="btn-remove" onclick="removeItem(this)">Remove</button>
+        `;
+            ingredientsContainer.appendChild(newItem);
         });
 
-        container.addEventListener('click', function (e) {
-            if (e.target.classList.contains('remove-step')) {
-                const stepDiv = e.target.closest('.step');
-                stepDiv.remove();
-                const steps = container.querySelectorAll('.step');
-                steps.forEach((step, index) => {
-                    const newNum = index + 1;
-                    step.dataset.step = newNum;
-                    step.querySelector('label').textContent = `Step ${newNum}`;
-                    step.querySelector('textarea').name = `step-${newNum}`;
-                    step.querySelector('input[type="file"]').name = `step-image-${newNum}`;
-                });
-                stepCount = steps.length;
-            }
+        const stepsContainer = document.getElementById('steps-container');
+        const addStepBtn = document.getElementById('add-step-btn');
+        let stepCounter = stepsContainer.querySelectorAll('.step-item').length;
+
+        addStepBtn.addEventListener('click', () => {
+            stepCounter++;
+            const newItem = document.createElement('div');
+            newItem.classList.add('step-item');
+            newItem.innerHTML = `
+            <textarea name="step-${stepCounter}" placeholder="Step instruction"></textarea>
+            <div class="step-image-control">
+                <input type="file" name="step-image-${stepCounter}" accept="image/*">
+            </div>
+            <button type="button" class="btn-remove" onclick="removeItem(this)">Remove</button>
+        `;
+            stepsContainer.appendChild(newItem);
         });
+
+        window.removeItem = function (button) {
+            const item = button.parentElement;
+            const container = item.parentElement;
+            item.remove();
+
+            if (container.id === 'ingredients-container') {
+                ingredientCounter = updateItemNames(container, 'ingredient-item', [
+                    { selector: 'input[name^="ingredient-name"]', baseName: 'ingredient-name' },
+                    { selector: 'input[name^="ingredient-weight"]', baseName: 'ingredient-weight' }
+                ]);
+            } else if (container.id === 'steps-container') {
+                stepCounter = updateItemNames(container, 'step-item', [
+                    { selector: 'textarea[name^="step-"]', baseName: 'step' },
+                    { selector: 'input[type="file"]', baseName: 'step-image' },
+                    { selector: 'input[type="checkbox"]', baseName: 'remove_step_image' }
+                ]);
+            }
+        }
     });
 </script>
 {% endblock %}

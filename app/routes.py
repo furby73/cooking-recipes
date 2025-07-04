@@ -3,7 +3,7 @@ from flask_login import login_user, login_required, logout_user
 from werkzeug.security import check_password_hash
 from app import app, db
 from app.forms import AdminLoginForm
-from app.models import AdminUser, Recipe, RecipeStep
+from app.models import AdminUser, Recipe, RecipeStep, RecipeIngredient
 from app.config import Config
 from app.s3_helpers import upload_file, delete_file, create_bucket_if_not_exists
 from slugify import slugify
@@ -45,6 +45,20 @@ def new_recipe():
         db.session.add(recipe)
         db.session.commit()
         
+        # Add ingredients
+        ingredient_counter = 1
+        while f'ingredient-name-{ingredient_counter}' in request.form:
+            name = request.form[f'ingredient-name-{ingredient_counter}'].strip()
+            weight = request.form[f'ingredient-weight-{ingredient_counter}'].strip()
+            if name and weight:
+                ingredient = RecipeIngredient(
+                    name=name,
+                    weight=weight,
+                    recipe_id=recipe.id
+                )
+                db.session.add(ingredient)
+            ingredient_counter += 1
+
         # Add steps
         step_counter = 1
         while f'step-{step_counter}' in request.form:
@@ -101,6 +115,20 @@ def edit_recipe(id):
                     'covers'
                 )
         
+        # Process ingredients (delete and re-add for simplicity)
+        for ingredient in recipe.ingredients:
+            db.session.delete(ingredient)
+        db.session.flush()
+
+        ingredient_counter = 1
+        while f'ingredient-name-{ingredient_counter}' in request.form:
+            name = request.form.get(f'ingredient-name-{ingredient_counter}', '').strip()
+            weight = request.form.get(f'ingredient-weight-{ingredient_counter}', '').strip()
+            if name and weight:
+                new_ingredient = RecipeIngredient(name=name, weight=weight, recipe_id=recipe.id)
+                db.session.add(new_ingredient)
+            ingredient_counter += 1
+
         # Process steps
         existing_steps = {step.step_number: step for step in recipe.steps}
         new_step_numbers = []
@@ -165,7 +193,7 @@ def delete_recipe(id):
         if step.image:
             delete_file(step.image)
     
-    # Delete recipe
+    # Delete recipe (ingredients and steps are cascaded)
     db.session.delete(recipe)
     db.session.commit()
     flash('Recipe deleted.', 'info')
@@ -174,12 +202,17 @@ def delete_recipe(id):
 @app.before_request
 def seed_data():
     if not Recipe.query.first():
-        # Create sample recipes with their steps
+        # Create sample recipes with their steps and ingredients
         scrambled_eggs = Recipe(
             title='Scrambled Eggs',
             shortname='scrambled-eggs',
             description='Tasty eggs made from eggs.'
         )
+        scrambled_eggs.ingredients = [
+            RecipeIngredient(name='Eggs', weight='2'),
+            RecipeIngredient(name='Butter', weight='1 tbsp'),
+            RecipeIngredient(name='Milk', weight='2 tbsp')
+        ]
         scrambled_eggs.steps = [
             RecipeStep(step_number=1, instruction='Crack eggs into a bowl'),
             RecipeStep(step_number=2, instruction='Whisk eggs until smooth'),
@@ -191,6 +224,11 @@ def seed_data():
             shortname='pasta',
             description='A delicious pasta dish with a rich sauce.'
         )
+        pasta.ingredients = [
+            RecipeIngredient(name='Pasta', weight='200g'),
+            RecipeIngredient(name='Tomato Sauce', weight='1 cup'),
+            RecipeIngredient(name='Garlic', weight='2 cloves')
+        ]
         pasta.steps = [
             RecipeStep(step_number=1, instruction='Boil water in a large pot'),
             RecipeStep(step_number=2, instruction='Add pasta and cook for 8-10 minutes'),
@@ -202,8 +240,16 @@ def seed_data():
             shortname='chocolate-cake',
             description='A moist chocolate cake with creamy frosting.'
         )
+        chocolate_cake.ingredients = [
+            RecipeIngredient(name='Flour', weight='200g'),
+            RecipeIngredient(name='Sugar', weight='150g'),
+            RecipeIngredient(name='Cocoa Powder', weight='50g'),
+            RecipeIngredient(name='Eggs', weight='2'),
+            RecipeIngredient(name='Milk', weight='100ml'),
+            RecipeIngredient(name='Butter', weight='100g')
+        ]
         chocolate_cake.steps = [
-            RecipeStep(step_number=1, instruction='Preheat oven to 350°F (175°C)'),
+            RecipeStep(step_number=1, instruction='Preheat oven to 350 F (175 C)'),
             RecipeStep(step_number=2, instruction='Mix dry ingredients in a bowl'),
             RecipeStep(step_number=3, instruction='Add wet ingredients and mix'),
             RecipeStep(step_number=4, instruction='Pour into pan and bake for 30 minutes')
@@ -214,11 +260,13 @@ def seed_data():
         db.session.add(pasta)
         db.session.add(chocolate_cake)
         db.session.commit()
+
 @app.route('/')
 @app.route('/index')
 def index():
     recipes = Recipe.query.all()
-    return render_template( 'index.html', recipes=recipes)
+    return render_template('index.html', recipes=recipes)
+
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     form = AdminLoginForm()
